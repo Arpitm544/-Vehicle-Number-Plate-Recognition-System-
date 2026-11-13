@@ -194,7 +194,7 @@ keeps an `.partial.mp4` name; the source video is never overwritten.
 
 The same OCR limitations from Step 4 apply. There is no vehicle tracking or
 frame-to-frame voting yet, so text may flicker or be wrong. Per-frame crops are
-processed in memory rather than saved to disk. CSV export is the next step.
+processed in memory rather than saved to disk. CSV export is described in Step 6.
 
 Run `python -m unittest -v` for the offline checks, including an encoded video
 round-trip, model reuse, invalid input/FPS, early decoding failure, and encoder
@@ -202,13 +202,50 @@ cleanup. Local real-model smoke test: all six frames of a repeated-photo clip we
 processed, saved, and decoded at 3 FPS. This verifies the file pipeline, not
 recognition performance on moving traffic; low-confidence OCR errors remain.
 
+## Step 6: Export video readings to CSV
+
+The existing command now saves both `annotated.mp4` and `plates.csv` in the
+same output folder:
+
+```sh
+python process_video.py "path/to/traffic_video.mp4"
+```
+
+CSV columns:
+
+| Column | Meaning |
+| --- | --- |
+| `frame_number` | Zero-based decoded frame index; the first frame is 0 |
+| `video_time_seconds` | Frame index / source FPS, rounded to milliseconds |
+| `plate_number` | Raw normalised OCR text; blank if OCR returned no text |
+| `detection_confidence` | Plate detector score, rounded to four decimals |
+| `ocr_confidence` | OCR score, rounded to four decimals; blank if unreadable |
+
+Timestamps are relative to the start of the video, not clock time, and use the
+same nominal FPS as the saved MP4. Use fixed-frame-rate footage for accurate
+timing. Each detected plate gets one row; frames with no detections add no rows.
+A video with no plates produces a CSV containing only the header.
+
+Repeated sightings are retained as separate rows. There is no vehicle tracking,
+deduplication, or voting; row counts are not counts of unique vehicles. Low
+confidence and incorrect OCR readings are retained for review, not certified as
+valid plates. The CSV is written incrementally with Python's standard library,
+so no new dependencies are needed.
+
+Each run has a fresh folder. An interrupted/failed run keeps `plates.partial.csv`
+for inspection; it is renamed to `plates.csv` after the output video passes
+verification. CSV streams and video handles are closed on failure. Offline tests
+cover multiple plates in a frame, empty frames, timestamps, leading zeros,
+unreadable crops, header-only exports, and unfinished-run naming. The local
+six-frame real-model smoke run produced six CSV rows, with timestamps from
+0.000 to 1.667 seconds at 3 FPS; its low-confidence OCR readings remain incorrect.
+
 ## Next steps
 
-6. Save recognised plates and timestamps to CSV.
 7. Evaluate on labelled test footage and write the report.
 
-Image and video detection/OCR are implemented. CSV export and traffic violation
-detection are not yet implemented; violations need a defined rule.
+Image and video detection/OCR and video CSV export are implemented. Evaluation
+and traffic violation detection remain; violations need a defined rule.
 
 ## References
 

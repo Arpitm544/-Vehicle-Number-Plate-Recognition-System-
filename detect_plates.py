@@ -51,13 +51,17 @@ def annotate_plates(image, boxes, reader=None):
             continue
         crop = image[y1:y2, x1:x2]
         label = f"Plate {confidence:.2f}"
+        text, score = "", None
         if reader is not None:
             matches = read_plate_image(crop, reader=reader)
             label = "Unreadable"
             if matches:
                 text, score = max(matches, key=lambda match: match[1])
                 label = f"{text} | OCR {score:.2f}"
-        plates.append((crop, label, confidence))
+        plates.append({
+            "crop": crop, "label": label, "detection_confidence": confidence,
+            "plate_text": text, "ocr_confidence": score,
+        })
         cv2.rectangle(annotated, (x1, y1), (x2, y2), (0, 255, 0), 2)
         label_width = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)[0][0]
         label_x = min(x1, max(0, width - label_width - 2))
@@ -87,13 +91,14 @@ def detect_plates(image_path, output_root=Path("outputs"), ocr=False):
     output_root.mkdir(parents=True, exist_ok=True)
     output_dir = Path(tempfile.mkdtemp(prefix=f"{image_path.stem}_", dir=output_root))
     crops, readings = [], []
-    for crop, label, confidence in plates:
+    for plate in plates:
         crop_path = output_dir / f"plate_{len(crops) + 1}.png"
-        if not cv2.imwrite(str(crop_path), crop):
+        if not cv2.imwrite(str(crop_path), plate["crop"]):
             raise OSError(f"Could not save crop: {crop_path}")
         crops.append(crop_path)
         if ocr:
-            reading = f"{crop_path.name}: {label} | Detection {confidence:.2f}"
+            reading = (f"{crop_path.name}: {plate['label']} | "
+                       f"Detection {plate['detection_confidence']:.2f}")
             readings.append(reading)
             print(reading)
     if not cv2.imwrite(str(output_dir / "detected.png"), annotated):
