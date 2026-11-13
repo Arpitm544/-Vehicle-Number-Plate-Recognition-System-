@@ -170,14 +170,45 @@ Run all offline checks with `python -m unittest -v`. The integration test covers
 multiple plates, one shared reader, an unreadable crop, saved text results, and
 an image with no detections.
 
+## Step 5: Process a video
+
+```sh
+python process_video.py "path/to/traffic_video.mp4"
+```
+
+This runs the same detector and OCR on every decoded frame, with both models
+loaded once for the video. It saves `outputs/<new-run-folder>/annotated.mp4`
+with plate boxes, recognised text, and confidence scores. Frames without plates
+are also retained. No additional dependencies are required.
+
+The output uses the input's nominal FPS; processing itself can be much slower
+than real time on CPU. Progress prints every 30 frames. Use a short clip first.
+The MP4 contains video only: audio is not copied. Odd frame dimensions are
+padded by one black pixel for the MP4 encoder. Prefer fixed-frame-rate footage.
+
+The script checks the input, FPS, and encoder, and detects early decoder failure
+when the source reports a frame count. It decodes the complete saved output to
+verify the frame count before marking it finished. Each run uses a separate
+folder. On failure or Ctrl+C, resources are released and any unfinished video
+keeps an `.partial.mp4` name; the source video is never overwritten.
+
+The same OCR limitations from Step 4 apply. There is no vehicle tracking or
+frame-to-frame voting yet, so text may flicker or be wrong. Per-frame crops are
+processed in memory rather than saved to disk. CSV export is the next step.
+
+Run `python -m unittest -v` for the offline checks, including an encoded video
+round-trip, model reuse, invalid input/FPS, early decoding failure, and encoder
+cleanup. Local real-model smoke test: all six frames of a repeated-photo clip were
+processed, saved, and decoded at 3 FPS. This verifies the file pipeline, not
+recognition performance on moving traffic; low-confidence OCR errors remain.
+
 ## Next steps
 
-5. Process video and save an annotated demo.
 6. Save recognised plates and timestamps to CSV.
 7. Evaluate on labelled test footage and write the report.
 
-Image detection and OCR are now connected. Video processing and traffic
-violation detection are not yet implemented; violations need a defined rule.
+Image and video detection/OCR are implemented. CSV export and traffic violation
+detection are not yet implemented; violations need a defined rule.
 
 ## References
 

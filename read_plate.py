@@ -24,6 +24,15 @@ def read_plate(image_path, reader=None):
     if image is None:
         raise ValueError(f"Cannot decode image: {image_path}. Use a JPG or PNG image.")
 
+    return read_plate_image(image, reader=reader)
+
+
+def read_plate_image(image, reader=None):
+    """Read an in-memory crop so video frames do not need temporary images."""
+    if image is None or image.size == 0:
+        raise ValueError("Cannot read an empty plate crop")
+    if image.ndim == 3:
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
     if reader is None:
         reader = create_reader()
     # shortcut: one tightly cropped text line; add text detection for two-line plates.
