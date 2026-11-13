@@ -73,7 +73,8 @@ with the pretrained model's training set is unknown.
 
 The detector's model card separately reports train/test contamination in its
 upstream dataset. Its published accuracy figures are not used in this report.
-The photo and generated clip are local test inputs, not redistributed here.
+The annotated demo, its first-frame input/output images, and the plate crop
+are included under `evidence/`, with upstream attribution and license.
 
 ## Evaluation method
 
@@ -132,6 +133,83 @@ model checksum/cache handling, OCR reuse, empty/unreadable results, CSV values,
 frame timestamps, video round-trip/cleanup, IoU, duplicate detections, missed
 plates, metric denominators, and invalid labels. Mock-based tests establish code
 behaviour; they do not establish model accuracy.
+
+## Execution evidence
+
+The images and files below come from local execution of the project code, not
+illustrative mockups. They support the limited checks described above; the
+real-photo OCR failure is intentionally retained.
+
+### 1. Synthetic cropped-image OCR check
+
+![Generated single-line plate used for the OCR check](samples/synthetic_plate.png)
+
+Actual captured result:
+
+```text
+Plate text: MH12AB1234 | OCR confidence: 0.99
+```
+
+[Full OCR execution log](evidence/synthetic_ocr.txt). This is generated text,
+so it proves only the simple cropped-image path works.
+
+### 2. Real-photo detection and OCR failure
+
+Input frame 0 from the repeated-photo clip:
+
+![Unannotated input frame 0](evidence/input_frame_0.png)
+
+Actual first frame decoded from the annotated output video:
+
+![Actual annotated output showing the wrong OCR reading LEV31](evidence/annotated_frame_0.png)
+
+The exported plate crop, enlarged for viewing:
+
+<img src="evidence/plate_crop_0.png" width="324" alt="Actual detector crop: visible plate 5AU5341">
+
+The visible plate is `5AU5341`; OCR predicted `LEV31` with score 0.1064
+(displayed as 0.11). The box is a successful target detection; the text is a
+failed read. This is not evidence of successful real-plate recognition.
+
+### 3. Video and timestamped export
+
+[Download the actual annotated demo MP4](evidence/annotated_demo.mp4).
+It contains six repeated-photo frames at 3 FPS, not moving traffic.
+[Saved video verification](evidence/video_verification.json) records the decoded
+frame count and FPS. The annotated frame above is extracted from that MP4.
+
+The first three actual prediction rows are:
+
+```csv
+frame_number,video_time_seconds,plate_number,detection_confidence,ocr_confidence,x1,y1,x2,y2
+0,0.000,LEV31,0.7305,0.1064,307,188,388,211
+1,0.333,4EV531,0.7316,0.0397,307,188,388,211
+2,0.667,4EV531,0.7318,0.0434,307,188,388,211
+```
+
+[Complete prediction CSV](evaluation/preliminary_predictions.csv),
+[manual ground truth](evaluation/preliminary_ground_truth.csv), and
+[calculated metrics](evaluation/preliminary_metrics.json) are available for
+inspection. [The evaluator execution log](evidence/evaluation.txt) shows the
+reproducible result: one matched detection and zero correct reads in the one
+labelled frame; the other five repeated-frame rows are excluded.
+
+### 4. Automated test evidence
+
+Fresh test run summary:
+
+```text
+Ran 14 tests in 0.141s
+
+OK
+```
+
+[Full test transcript](evidence/tests.txt), including the command, source revision,
+and exit status. Some test cases mock detector/OCR responses; their printed
+sample readings verify code behaviour, not real-world recognition accuracy.
+
+[Evidence origins and upstream license](evidence/README.md) identify the photo
+source, transformations, and the origin of each artifact.
 
 ## Limitations and improvements
 
