@@ -44,19 +44,57 @@ OpenCV's headless package supports image processing and saved video output,
 but does not open desktop windows with `cv2.imshow`. Keep just this OpenCV
 package installed to avoid conflicting `cv2` installations.
 
+## Step 2: Read a cropped plate image
+
+Activate the environment from Step 1, then run:
+
+```sh
+python read_plate.py samples/synthetic_plate.png
+python read_plate.py "path/to/cropped_plate.jpg"
+```
+
+The included sample is generated text, not a real vehicle photograph.
+
+Use a clear JPG or PNG containing only one horizontal line of plate characters.
+Crop away the vehicle and any small country labels. Full vehicle photographs
+and two-line plates need detection/segmentation in later steps.
+
+The first run downloads English OCR recognition weights into `models/easyocr/`.
+Internet access is required for that first run; later runs reuse the local model.
+Processing runs on CPU. Model files are ignored by Git.
+
+Verified output for the included synthetic sample on the local CPU:
+
+```text
+Plate text: MH12AB1234 | OCR confidence: 0.99
+```
+
+Confidence is the model's score, not measured accuracy or proof of a valid plate.
+This step restricts output to uppercase Latin letters and digits. It does not
+correct ambiguous characters such as O/0 or validate regional plate formats.
+
+Run the offline checks with:
+
+```sh
+python -m unittest -v
+```
+
+These tests mock OCR to check image validation and result handling. Evaluate
+recognition separately using real labelled plate images.
+
 ## Next steps
 
-2. Read text from a clear, manually cropped plate image.
 3. Add a detector with license-plate-trained weights and its YOLO dependencies.
 4. Connect detection and OCR.
 5. Process video and save an annotated demo.
 6. Save recognised plates and timestamps to CSV.
 7. Evaluate on labelled test footage and write the report.
 
-Plate recognition is not yet implemented. Traffic violation detection requires
-a separately defined rule and is not included in Step 1.
+Cropped-image OCR is implemented. Automatic plate detection and traffic
+violation detection are not yet implemented; violations need a defined rule.
 
 ## References
 
 - [EasyOCR installation and usage](https://github.com/JaidedAI/EasyOCR)
 - [OpenCV Python packages](https://pypi.org/project/opencv-python-headless/)
+- [EasyOCR API documentation](https://www.jaided.ai/easyocr/documentation/)
