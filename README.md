@@ -82,19 +82,76 @@ python -m unittest -v
 These tests mock OCR to check image validation and result handling. Evaluate
 recognition separately using real labelled plate images.
 
+## Step 3: Detect plates in a full image
+
+Update the environment, then provide a vehicle or junction image:
+
+```sh
+python -m pip install -r requirements.txt
+python detect_plates.py "path/to/vehicle.jpg"
+```
+
+The first run downloads the 5.47 MB YOLO11n plate detector into `models/`.
+The source revision and SHA-256 checksum are pinned in `detect_plates.py`;
+subsequent runs check and reuse the local file. The script runs on CPU.
+
+Each run creates a new folder under `outputs/` containing:
+
+- `detected.png`: the full image with green plate boxes and detection scores.
+- `plate_1.png`, `plate_2.png`, etc.: unannotated crops for the OCR step.
+
+Runs use separate output folders to avoid overwriting earlier results. A run
+with no detections still saves the full image and prints a message. The fixed
+minimum detection confidence is 0.25; this is not measured accuracy.
+
+For now, OCR remains a separate command. For a single-line detected plate:
+
+```sh
+python read_plate.py "outputs/<run-folder>/plate_1.png"
+```
+
+The OCR sample from Step 2 is just text, not a full vehicle scene; use an actual
+vehicle image for detection. Two-line crops still need the later OCR improvements.
+The offline tests cover crop boundaries, empty detections, invalid images,
+non-overwriting outputs, and model download/cache checksum handling.
+
+### Detector source and limitations
+
+The detector is the nano model published by
+[morsetechlab](https://huggingface.co/morsetechlab/yolov11-license-plate-detection),
+revision `251a30d7daedca065f56e04b0af04052c907c68f`. The weights and Ultralytics
+are published under AGPL-3.0. Their original licenses apply; model weights are
+not committed to this repository.
+
+The model author reports train/test contamination in the upstream dataset.
+Do not use the model card's accuracy numbers in this project's report. Evaluate
+on independent labelled images/video, especially for Indian plates, motorcycles,
+small plates, and low light. This step is a prototype, not an accuracy evaluation.
+
+`ultralytics-opencv-headless` supplies the same `ultralytics` Python API while
+using the existing headless OpenCV package. Do not install the regular
+`ultralytics` package alongside it. NumPy and OpenCV were updated together to
+satisfy the YOLO package's macOS compatibility requirements.
+
+Local smoke test: the detector found one plate (score 0.73) in the public
+[FastALPR vehicle sample](https://github.com/ankandrew/fast-alpr/blob/master/assets/test_image.png).
+The image was used locally and is not included in this repository. This is a
+functionality check, not an independent accuracy benchmark.
+
 ## Next steps
 
-3. Add a detector with license-plate-trained weights and its YOLO dependencies.
 4. Connect detection and OCR.
 5. Process video and save an annotated demo.
 6. Save recognised plates and timestamps to CSV.
 7. Evaluate on labelled test footage and write the report.
 
-Cropped-image OCR is implemented. Automatic plate detection and traffic
-violation detection are not yet implemented; violations need a defined rule.
+Cropped-image OCR and image-based plate detection are implemented separately.
+Automatic detection-to-OCR integration, video processing, and traffic violation
+detection are not yet implemented; violations need a defined rule.
 
 ## References
 
 - [EasyOCR installation and usage](https://github.com/JaidedAI/EasyOCR)
 - [OpenCV Python packages](https://pypi.org/project/opencv-python-headless/)
 - [EasyOCR API documentation](https://www.jaided.ai/easyocr/documentation/)
+- [Ultralytics prediction API](https://docs.ultralytics.com/modes/predict/)
