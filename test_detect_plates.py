@@ -34,6 +34,35 @@ class DetectPlateTests(unittest.TestCase):
                 self.assertNotEqual(output, second_output)
                 self.assertTrue((second_output / "detected.png").is_file())
 
+    def test_ocr_reuses_reader_and_records_unreadable_plates(self):
+        with TemporaryDirectory() as folder:
+            root = Path(folder)
+            image = root / "car.png"
+            self.assertTrue(cv2.imwrite(str(image), np.full((100, 200, 3), 255, np.uint8)))
+            with patch.object(detector, "ensure_model", return_value="model.pt"), \
+                    patch.object(detector, "YOLO") as yolo, \
+                    patch.object(detector, "create_reader") as create_reader:
+                boxes = yolo.return_value.predict.return_value[0].boxes.data
+                boxes.tolist.return_value = [
+                    [5, 20, 95, 50, 0.9, 0], [105, 20, 195, 50, 0.8, 0],
+                ]
+                create_reader.return_value.recognize.side_effect = [
+                    [([], "MH 12 AB 1234", 0.92)], [],
+                ]
+                output, crops = detector.detect_plates(image, root / "output", ocr=True)
+                create_reader.assert_called_once()
+                self.assertEqual(len(crops), 2)
+                report = (output / "results.txt").read_text()
+                self.assertIn("plate_1.png: MH12AB1234 | OCR 0.92 | Detection 0.90", report)
+                self.assertIn("plate_2.png: Unreadable | Detection 0.80", report)
+                self.assertTrue((output / "detected.png").is_file())
+                create_reader.reset_mock()
+                boxes.tolist.return_value = []
+                output, crops = detector.detect_plates(image, root / "output", ocr=True)
+                self.assertEqual(crops, [])
+                create_reader.assert_not_called()
+                self.assertEqual((output / "results.txt").read_text(), "No plates detected.\n")
+
     def test_invalid_input_does_not_load_model(self):
         with TemporaryDirectory() as folder, patch.object(detector, "ensure_model") as model:
             image = Path(folder) / "car.png"

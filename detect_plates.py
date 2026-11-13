@@ -1,4 +1,4 @@
-"""Detect plates in a full image and save boxes and crops (no OCR yet)."""
+"""Detect plates in a full image and save boxes and crops (optionally with OCR)."""
 
 import argparse
 import hashlib
@@ -9,6 +9,8 @@ import tempfile
 from urllib.request import urlopen
 
 import cv2
+
+from read_plate import create_reader, read_plate
 
 ROOT = Path(__file__).resolve().parent
 os.environ.setdefault("YOLO_CONFIG_DIR", str(ROOT / "models" / "ultralytics"))
@@ -37,7 +39,7 @@ def ensure_model():
     return MODEL_PATH
 
 
-def detect_plates(image_path, output_root=Path("outputs")):
+def detect_plates(image_path, output_root=Path("outputs"), ocr=False):
     image_path = Path(image_path)
     if not image_path.is_file():
         raise ValueError(f"Image file not found: {image_path}")
@@ -54,6 +56,8 @@ def detect_plates(image_path, output_root=Path("outputs")):
     annotated = image.copy()
     height, width = image.shape[:2]
     crops = []
+    reader = None
+    readings = []
     for left, top, right, bottom, confidence, _ in result.boxes.data.tolist():
         x1, y1 = max(0, math.floor(left)), max(0, math.floor(top))
         x2, y2 = min(width, math.ceil(right)), min(height, math.ceil(bottom))
@@ -63,20 +67,42 @@ def detect_plates(image_path, output_root=Path("outputs")):
         if not cv2.imwrite(str(crop_path), image[y1:y2, x1:x2]):
             raise OSError(f"Could not save crop: {crop_path}")
         crops.append(crop_path)
+        label = f"Plate {confidence:.2f}"
+        if ocr:
+            if reader is None:
+                reader = create_reader()
+            matches = read_plate(crop_path, reader=reader)
+            label = "Unreadable"
+            if matches:
+                text, score = max(matches, key=lambda match: match[1])
+                label = f"{text} | OCR {score:.2f}"
+            reading = f"{crop_path.name}: {label} | Detection {confidence:.2f}"
+            readings.append(reading)
+            print(reading)
         cv2.rectangle(annotated, (x1, y1), (x2, y2), (0, 255, 0), 2)
-        cv2.putText(annotated, f"Plate {confidence:.2f}", (x1, max(20, y1 - 8)),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+        label_width = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)[0][0]
+        label_x = min(x1, max(0, width - label_width - 2))
+        label_y = max(20, y1 - 8)
+        cv2.rectangle(annotated, (label_x, label_y - 16),
+                      (label_x + label_width + 2, label_y + 4), (0, 0, 0), -1)
+        cv2.putText(annotated, label, (label_x, label_y),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 1)
     if not cv2.imwrite(str(output_dir / "detected.png"), annotated):
         raise OSError(f"Could not save annotated image in {output_dir}")
+    if ocr:
+        (output_dir / "results.txt").write_text(
+            "\n".join(readings or ["No plates detected."]) + "\n", encoding="utf-8",
+        )
     return output_dir, crops
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("image", type=Path, help="A full vehicle/junction JPG or PNG")
+    parser.add_argument("--ocr", action="store_true", help="Read and label each detected plate")
     args = parser.parse_args()
     try:
-        output_dir, crops = detect_plates(args.image)
+        output_dir, crops = detect_plates(args.image, ocr=args.ocr)
     except (ValueError, OSError, RuntimeError, cv2.error) as error:
         parser.exit(1, f"Error: {error}\n")
     print(f"Detected {len(crops)} plate(s). Results: {output_dir.resolve()}")

@@ -7,7 +7,16 @@ import cv2
 import easyocr
 
 
-def read_plate(image_path):
+def create_reader():
+    model_dir = Path(__file__).resolve().parent / "models" / "easyocr"
+    return easyocr.Reader(
+        ["en"], gpu=False, detector=False,
+        model_storage_directory=str(model_dir),
+        user_network_directory=str(model_dir / "user_network"),
+    )
+
+
+def read_plate(image_path, reader=None):
     image_path = Path(image_path)
     if not image_path.is_file():
         raise ValueError(f"Image file not found: {image_path}")
@@ -15,12 +24,8 @@ def read_plate(image_path):
     if image is None:
         raise ValueError(f"Cannot decode image: {image_path}. Use a JPG or PNG image.")
 
-    model_dir = Path(__file__).resolve().parent / "models" / "easyocr"
-    reader = easyocr.Reader(
-        ["en"], gpu=False, detector=False,
-        model_storage_directory=str(model_dir),
-        user_network_directory=str(model_dir / "user_network"),
-    )
+    if reader is None:
+        reader = create_reader()
     # shortcut: one tightly cropped text line; add text detection for two-line plates.
     results = reader.recognize(
         image, allowlist="ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789", detail=1,

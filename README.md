@@ -104,7 +104,7 @@ Runs use separate output folders to avoid overwriting earlier results. A run
 with no detections still saves the full image and prints a message. The fixed
 minimum detection confidence is 0.25; this is not measured accuracy.
 
-For now, OCR remains a separate command. For a single-line detected plate:
+Without `--ocr`, this command performs detection only. For a single-line detected plate:
 
 ```sh
 python read_plate.py "outputs/<run-folder>/plate_1.png"
@@ -138,16 +138,46 @@ Local smoke test: the detector found one plate (score 0.73) in the public
 The image was used locally and is not included in this repository. This is a
 functionality check, not an independent accuracy benchmark.
 
+## Step 4: Detect and read plates together
+
+```sh
+python detect_plates.py "path/to/vehicle.jpg" --ocr
+```
+
+One command now detects plates, reads each crop, and writes the recognised text
+above its box in `detected.png`. It also saves each crop and a `results.txt` file
+mapping crop filenames to recognised text, OCR confidence, and detection
+confidence. Each run uses a fresh output folder under `outputs/`.
+
+One OCR reader is shared across all plates in the image. It loads only when at
+least one plate is detected. First use may download the OCR model as described
+in Step 2. No additional dependencies are needed for this step.
+
+If OCR returns no text, the crop is retained and labelled `Unreadable`. Low
+confidence readings are displayed with their score; they are not automatically
+accepted as correct. The existing single-line, Latin letters/digits restriction
+still applies. Country labels, two-line plates, blur, and O/0 or B/8 ambiguity
+can produce incorrect text. Check the crop against the displayed result.
+
+The combined flow was run on the FastALPR vehicle sample: detection succeeded
+(score 0.73), but OCR returned `4E05` at score 0.10, which does not match the
+visible plate. Resizing and contrast checks did not give a reliable correction,
+so no sample-specific correction was added. This documents a recognition failure,
+not a successful accuracy result; use clearer images and evaluate independently.
+The synthetic cropped sample still reads `MH12AB1234` at score 0.99.
+
+Run all offline checks with `python -m unittest -v`. The integration test covers
+multiple plates, one shared reader, an unreadable crop, saved text results, and
+an image with no detections.
+
 ## Next steps
 
-4. Connect detection and OCR.
 5. Process video and save an annotated demo.
 6. Save recognised plates and timestamps to CSV.
 7. Evaluate on labelled test footage and write the report.
 
-Cropped-image OCR and image-based plate detection are implemented separately.
-Automatic detection-to-OCR integration, video processing, and traffic violation
-detection are not yet implemented; violations need a defined rule.
+Image detection and OCR are now connected. Video processing and traffic
+violation detection are not yet implemented; violations need a defined rule.
 
 ## References
 
