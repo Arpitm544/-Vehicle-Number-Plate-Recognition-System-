@@ -60,7 +60,7 @@ def annotate_plates(image, boxes, reader=None):
                 label = f"{text} | OCR {score:.2f}"
         plates.append({
             "crop": crop, "label": label, "detection_confidence": confidence,
-            "plate_text": text, "ocr_confidence": score,
+            "plate_text": text, "ocr_confidence": score, "box": (x1, y1, x2, y2),
         })
         cv2.rectangle(annotated, (x1, y1), (x2, y2), (0, 255, 0), 2)
         label_width = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1)[0][0]

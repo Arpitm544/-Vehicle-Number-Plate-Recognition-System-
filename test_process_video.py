@@ -46,6 +46,7 @@ class ProcessVideoTests(unittest.TestCase):
                 self.assertEqual([row["frame_number"] for row in rows], ["0", "0", "2"])
                 self.assertEqual([row["video_time_seconds"] for row in rows], ["0.000", "0.000", "0.500"])
                 self.assertEqual([row["plate_number"] for row in rows], ["MH12AB1234", "00123", ""])
+                self.assertEqual([rows[0][key] for key in ("x1", "y1", "x2", "y2")], ["10", "40", "95", "80"])
                 self.assertEqual(rows[0]["detection_confidence"], "0.9000")
                 self.assertEqual(rows[0]["ocr_confidence"], "0.9200")
                 self.assertEqual(rows[2]["ocr_confidence"], "")

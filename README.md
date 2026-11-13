@@ -220,6 +220,7 @@ CSV columns:
 | `plate_number` | Raw normalised OCR text; blank if OCR returned no text |
 | `detection_confidence` | Plate detector score, rounded to four decimals |
 | `ocr_confidence` | OCR score, rounded to four decimals; blank if unreadable |
+| `x1`, `y1`, `x2`, `y2` | Clipped plate box in original-frame pixels (added for evaluation) |
 
 Timestamps are relative to the start of the video, not clock time, and use the
 same nominal FPS as the saved MP4. Use fixed-frame-rate footage for accurate
@@ -240,12 +241,30 @@ unreadable crops, header-only exports, and unfinished-run naming. The local
 six-frame real-model smoke run produced six CSV rows, with timestamps from
 0.000 to 1.667 seconds at 3 FPS; its low-confidence OCR readings remain incorrect.
 
-## Next steps
+## Step 7: Evaluate and read the report
 
-7. Evaluate on labelled test footage and write the report.
+```sh
+python evaluate.py evaluation/preliminary_ground_truth.csv evaluation/preliminary_predictions.csv
+```
 
-Image and video detection/OCR and video CSV export are implemented. Evaluation
-and traffic violation detection remain; violations need a defined rule.
+The evaluator reports detection precision/recall, OCR exact-match accuracy,
+end-to-end exact-match accuracy, and raw counts using one-to-one box matching
+at IoU 0.5. It evaluates only explicitly labelled frames. See
+[evaluation instructions](evaluation/README.md) for manual labels and new footage.
+
+[The project report](REPORT.md) documents the architecture, tests, actual results,
+limitations, and reproduction commands. The committed preliminary evaluation
+contains **one manually labelled target in one development frame**: detection
+matched it, but OCR read it incorrectly. This is not a representative accuracy
+benchmark. The repeated-photo clip is not six independent examples.
+
+All 14 automated tests pass. A final accuracy report still requires independent,
+labelled traffic footage. The report is provided as Markdown; complete the
+student details before submission.
+
+Image/video detection, OCR, CSV export, an evaluator, and a preliminary report
+are implemented. Independent benchmarking and traffic violation detection remain;
+violations need a defined rule.
 
 ## References
 

@@ -51,7 +51,7 @@ def process_video(video_path, output_root=Path("outputs")):
         csv_writer = csv.writer(csv_file)
         csv_writer.writerow([
             "frame_number", "video_time_seconds", "plate_number",
-            "detection_confidence", "ocr_confidence",
+            "detection_confidence", "ocr_confidence", "x1", "y1", "x2", "y2",
         ])
         frames = 0
         while ok and frame is not None:
@@ -64,7 +64,7 @@ def process_video(video_path, output_root=Path("outputs")):
                 csv_writer.writerow([
                     frames, f"{frames / fps:.3f}", plate["plate_text"],
                     f"{plate['detection_confidence']:.4f}",
-                    "" if score is None else f"{score:.4f}",
+                    "" if score is None else f"{score:.4f}", *plate["box"],
                 ])
             annotated = cv2.copyMakeBorder(
                 annotated, 0, height % 2, 0, width % 2, cv2.BORDER_CONSTANT, value=(0, 0, 0),
