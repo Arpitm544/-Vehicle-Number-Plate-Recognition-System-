@@ -13,6 +13,11 @@ python evaluate.py evaluation/preliminary_ground_truth.csv evaluation/preliminar
 
 ## Evaluate new footage
 
+Ten real-footage clips are now included under `samples/footage/`; see the
+[gallery and source credits](../samples/footage/README.md). They are unlabelled.
+Keep related clips 06/07 together in development/test splits; this acquisition
+does not establish that the clips are independent of model training data.
+
 1. Obtain separate vehicle/junction footage and run `process_video.py`.
 2. Choose frames before reviewing predictions. For a final test, keep scenes
    independent of development footage and label every visible target plate.

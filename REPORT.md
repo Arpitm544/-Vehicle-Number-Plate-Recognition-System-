@@ -12,7 +12,7 @@ This Python prototype detects vehicle number plates, reads single-line plate
 text with OCR, and produces annotated images, annotated videos, and timestamped
 CSV files. It uses pretrained YOLO11n and EasyOCR models on CPU. It does not
 train a model from scratch. The file-processing pipeline works, but the current
-OCR fails on the available real vehicle sample. The results below are a
+OCR fails on the evaluated real vehicle sample. The results below are a
 preliminary diagnostic, not a representative accuracy benchmark.
 
 ## Objective and scope
@@ -54,7 +54,7 @@ video verification succeeds. Input files are not overwritten.
 
 ## Test material and ground truth
 
-No independent traffic dataset was supplied. Available material consists of:
+The initial preliminary evaluation used the following development material:
 
 1. A generated text image reading `MH12AB1234`, used for an OCR setup check.
 2. One public FastALPR vehicle photo, reused during development.
@@ -75,6 +75,44 @@ The detector's model card separately reports train/test contamination in its
 upstream dataset. Its published accuracy figures are not used in this report.
 The annotated demo, its first-frame input/output images, and the plate crop
 are included under `evidence/`, with upstream attribution and license.
+
+## Added real traffic footage collection
+
+Ten real moving-traffic clips have now been added under `samples/footage/`.
+Each is five seconds at 15 FPS: **10 clips, 50 seconds, 750 decoded frames**.
+These clips are separate from the synthetic image and repeated-photo diagnostic.
+They come from ten source videos on Wikimedia Commons, with per-file author
+credits, source links, license links, and transformation details.
+
+| Clip | Scene |
+| --- | --- |
+| [traffic_01.mp4](samples/footage/traffic_01.mp4) | Night highway traffic |
+| [traffic_02.mp4](samples/footage/traffic_02.mp4) | Signal-controlled urban junction |
+| [traffic_03.mp4](samples/footage/traffic_03.mp4) | Approaching car on a rural road |
+| [traffic_04.mp4](samples/footage/traffic_04.mp4) | Airport rental-car exit and crossing |
+| [traffic_05.mp4](samples/footage/traffic_05.mp4) | Hanoi intersection traffic |
+| [traffic_06.mp4](samples/footage/traffic_06.mp4) | Street-level approaching cars |
+| [traffic_07.mp4](samples/footage/traffic_07.mp4) | Wide street intersection |
+| [traffic_08.mp4](samples/footage/traffic_08.mp4) | Munich street junction |
+| [traffic_09.mp4](samples/footage/traffic_09.mp4) | Approaching ambulance and cars |
+| [traffic_10.mp4](samples/footage/traffic_10.mp4) | Snow-covered urban street |
+
+[View the ten-clip preview gallery and credits](samples/footage/README.md).
+[File provenance and hashes](samples/footage/manifest.json) and
+[full decoding checks](samples/footage/validation.json) are included.
+
+All ten videos decode successfully and show changing frames; three positions
+per clip were visually inspected. The collection includes junctions, approaching
+vehicles, night scenes, and winter conditions. Some available renditions are
+low resolution and plate text may be unreadable. These are footage samples,
+not ten proven successful recognition examples or ten labelled violations.
+
+Clips 06 and 07 are related street-intersection recordings and share one source
+group. They must stay together when splitting development/test data. The clips
+have not been manually labelled or evaluated; overlap with model training data
+is unknown. The preliminary metrics below remain based on the original single
+labelled development target, and are not recomputed or extrapolated to these
+new clips. A held-out accuracy evaluation is still pending.
 
 ## Evaluation method
 

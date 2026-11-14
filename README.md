@@ -3,6 +3,22 @@
 A computer vision semester project to detect vehicle number plates and read
 their text using Python, OpenCV, and EasyOCR.
 
+## Sample footage
+
+[Ten real traffic MP4 clips with previews and source credits](samples/footage/README.md)
+are included under `samples/footage/`. Each lasts five seconds: 50 seconds and
+750 fully decoded frames in total. They come from ten source videos; the two
+Nikon street clips are related and must remain in one development/test group.
+
+```sh
+python process_video.py samples/footage/traffic_06.mp4
+```
+
+These clips have not been manually labelled or benchmarked. Some plates are
+small, blurred, or dark. The original repeated-photo smoke clip is separate
+and is not counted as real traffic footage. License details and clip hashes are
+in the footage folder.
+
 ## Step 1: Environment setup
 
 Use Python 3.11 or 3.12. Python 3.11 is used for local verification.
@@ -258,8 +274,8 @@ contains **one manually labelled target in one development frame**: detection
 matched it, but OCR read it incorrectly. This is not a representative accuracy
 benchmark. The repeated-photo clip is not six independent examples.
 
-All 14 automated tests pass. A final accuracy report still requires independent,
-labelled traffic footage. The report is provided as Markdown; complete the
+All 14 automated tests pass. Ten unlabelled real-footage clips are now included;
+a final accuracy report still requires independent, manually labelled footage. The report is provided as Markdown; complete the
 student details before submission.
 
 Image/video detection, OCR, CSV export, an evaluator, and a preliminary report
